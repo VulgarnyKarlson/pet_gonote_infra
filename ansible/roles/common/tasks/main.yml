@@ -1,0 +1,72 @@
+- name: Install packages
+  apt:
+    name:
+      - gnupg2
+      - dos2unix
+      - ca-certificates
+      - aptitude
+      - wget
+      - curl
+      - nano
+      - man-db
+      - bash-completion
+      - jq
+      - apt-transport-https
+      - tcpdump
+      - less
+      - apt-file
+      - sudo
+      - rsyslog
+      - logrotate
+      - python3
+      - python3-pip
+      - python3-setuptools
+      - dnsutils
+      - dnsmasq
+      - psmisc
+      - nmap
+      - mc
+      - htop
+      - dirmngr
+    state: present
+    update_cache: yes
+- name: Remove unused packages
+  apt:
+    name:
+      - debsecan
+    state: absent
+  tags:
+    - debsecan
+- name: Gather package facts
+  package_facts:
+    manager: apt
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+- name: Set .bashrc for root
+  copy:
+    src: "{{ role_path }}/files/.bashrc"
+    dest: /root/
+- name: dos2unix bashrc
+  ansible.builtin.command: dos2unix ~/.bashrc
+- name: Setup systemd logrotate timer to run hourly
+  lineinfile:
+    path: /etc/systemd/system/timers.target.wants/logrotate.timer
+    regexp: '^OnCalendar=daily'
+    line: 'OnCalendar=hourly'
+    backrefs: true
+  ignore_errors: yes
+  register: logrotate_service
+  tags:
+    - logrotate
+- name: Reload systemd when logrotate timer changed
+  shell: systemctl daemon-reload
+  when: logrotate_service is defined and logrotate_service.changed
+  tags:
+    - logrotate
+
+- name: Set up admin
+  import_tasks: admin.yml
+
+- name: Set up sysctl
+  import_tasks: sysctl.yml

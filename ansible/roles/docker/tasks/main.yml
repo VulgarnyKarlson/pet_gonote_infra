@@ -1,0 +1,39 @@
+- package_facts:
+    manager: auto
+  tags:
+    - docker
+
+- import_tasks: setup-Debian.yml
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: "(ansible_os_family == 'Debian') and ('docker-ce' not in ansible_facts.packages)"
+  tags:
+    - docker
+
+- name: Ensure Docker is started and enabled at boot.
+  service:
+    name: docker
+    state: "{{ docker_service_state }}"
+    enabled: "{{ docker_service_enabled }}"
+  when: "('docker-ce' not in ansible_facts.packages)"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - docker
+
+- name: Ensure handlers are notified now to avoid firewall conflicts.
+  meta: flush_handlers
+
+- import_tasks: setup-Debian-pythonlibs.yml
+  when: "('python3-pip' not in ansible_facts.packages)"
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - docker
+
+- import_tasks: docker-users.yml
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags:
+    - docker
+
+- name: Restart docker service
+  command: service docker restart
+  tags:
+    - docker

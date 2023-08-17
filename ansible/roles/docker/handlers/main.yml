@@ -1,0 +1,11 @@
+---
+# Prune Docker images and containers older than one week (7 × 24h)
+- name: prune unused docker objects
+  docker_prune:
+    containers: yes
+    containers_filters:
+      until: 168h
+    images: yes
+    images_filters:
+      dangling: false
+      until: 168h

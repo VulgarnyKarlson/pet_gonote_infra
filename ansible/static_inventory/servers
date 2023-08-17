@@ -1,0 +1,12 @@
+[ansible:children]
+do
+
+[servers]
+dev ansible_ssh_host=128.140.36.196
+
+[do:children]
+servers
+
+[do:vars]
+ansible_ssh_user=root
+ansible_python_interpreter="{{ run_interpreter | default('/usr/bin/python3') }}"

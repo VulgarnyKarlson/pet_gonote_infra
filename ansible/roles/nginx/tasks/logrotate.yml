@@ -1,0 +1,40 @@
+- name: Set up logrotate for nginx
+  template:
+    src: "{{ role_path }}/files/nginx.logrotate"
+    dest: /etc/logrotate.d/nginx
+  tags:
+    - rolenginxsites
+    - logrotate
+
+- name: logrotate daily
+  block:
+  - name: generate template
+    copy:
+      src: "{{ role_path }}/files/logrotate.cron"
+      dest: /etc/cron.daily/logrotate
+      mode: 0755
+
+  - name: Disable running logrotate hourly
+    file:
+      path: /etc/cron.hourly/logrotate
+      state: absent
+  when: logrotate_period == 'daily'
+  tags:
+    - rolenginxsites
+    - logrotate
+
+- name: logrotate hourly
+  block:
+  - name: generate template
+    copy:
+      src: "{{ role_path }}/files/logrotate.cron"
+      dest: /etc/cron.hourly/logrotate
+      mode: 0755
+  - name: Disable running logrotate daily
+    file:
+      path: /etc/cron.daily/logrotate
+      state: absent
+  when: logrotate_period == 'hourly'
+  tags:
+    - rolenginxsites
+    - logrotate

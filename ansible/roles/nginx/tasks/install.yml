@@ -1,0 +1,82 @@
+- name: Add nginx repo key
+  apt_key:
+    url: https://nginx.org/keys/nginx_signing.key
+    state: present
+  when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+
+- name: remove old nginx repo
+  apt_repository:
+    repo: "deb http://nginx.org/packages/debian stretch nginx"
+    state: absent
+    filename: nginx
+  when: ansible_distribution == "Debian" and not ansible_lsb.codename == "stretch"
+
+- name: Add nginx repo
+  apt_repository:
+    repo: "deb http://nginx.org/packages/debian {{ ansible_lsb.codename }} nginx"
+    state: present
+    filename: nginx
+  when: ansible_distribution == "Debian"
+
+- name: Add nginx repo
+  apt_repository:
+    repo: "deb http://nginx.org/packages/ubuntu {{ ansible_distribution_release }} nginx"
+    state: present
+    filename: nginx
+  when: ansible_distribution == "Ubuntu"
+
+
+- name: "Check if NGINX is installed"
+  package_facts:
+    manager: "auto"
+  tags: rolenginxsites
+
+- name: Install nginx on Debian
+  apt:
+    name:
+      - "{{ nginx_version | default('nginx=1.24.0-1~' + ansible_lsb.codename) }}"
+      - apache2-utils
+    update_cache: true
+  when: ansible_distribution == "Debian" and ( nginx_version is defined or not 'nginx' in ansible_facts.packages )
+
+- name: Install nginx on Ubuntu
+  apt:
+    name:
+      - nginx
+      - apache2-utils
+    update_cache: true
+  when: ansible_distribution == "Ubuntu" and ( nginx_version is defined or not 'nginx' in ansible_facts.packages )
+
+- name: Install nginx on CentOS
+  package:
+    use: "yum"
+    name:
+      - nginx
+      - httpd-tools
+    update_cache: true
+  when: ansible_distribution == "CentOS" and ( nginx_version is defined or not 'nginx' in ansible_facts.packages )
+
+- name: Install nginx on other distribution
+  package:
+    name:
+      - nginx
+      - httpd-tools
+    update_cache: true
+  when: ansible_distribution != "Ubuntu" and ansible_distribution != "Debian" and ansible_distribution != "CentOS"
+
+- name: Install latest passlib with pip
+  pip:
+    name: passlib
+
+- name: Create nginx systemd unit dir
+  file:
+    name: /etc/systemd/system/nginx.service.d/
+    state: directory
+
+- name: Set limits for nginx systemd units
+  copy:
+    src: "{{ role_path }}/files/override.conf"
+    dest: "/etc/systemd/system/nginx.service.d/override.conf"
+  notify:
+    - reload systemd configuration
+    - restart nginx

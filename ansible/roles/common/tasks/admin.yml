@@ -1,0 +1,66 @@
+- name: Create temporary authorized_keys file
+  tempfile:
+    state: file
+  register: ssh_tmp
+  tags:
+    - ssh
+
+- name: Add deploy keys per one key to temporary file
+  authorized_key:
+    key: "{{ item.value.key }}"
+    key_options: "{{ item.value.options }}"
+    user: "{{ ansible_user }}"
+    state: present
+    path: "{{ ssh_tmp.path }}"
+    manage_dir: no
+  with_dict:
+    - "{{ ssh_deploy_keys }}"
+  when: ssh_deploy_keys is defined and ssh_deploy_keys|length > 0
+  tags:
+    - ssh
+
+- name: Add admin keys per one key to temporary file
+  authorized_key:
+    key: "{{ item }}"
+    user: "{{ ansible_user }}"
+    state: present
+    path: "{{ ssh_tmp.path }}"
+    manage_dir: no
+  with_items:
+    - "{{ ssh_admin_keys }}"
+  tags:
+    - ssh
+
+- name: Add admin SSH keys per one key to temporary file
+  authorized_key:
+    key: "{{ item }}"
+    user: "{{ ansible_user }}"
+    state: present
+    path: "{{ ssh_tmp.path }}"
+    manage_dir: no
+  with_items:
+    - "{{ ssh_admin_keys }}"
+  tags:
+    - ssh
+
+- name: Read authorized keys from tmp to variable
+  command: "cat {{ ssh_tmp.path }}"
+  register: ssh_keys
+  tags:
+    - ssh
+
+- name: Set ssh authorized_keys in-place
+  authorized_key:
+    key: "{{ ssh_keys.stdout }}"
+    user: "{{ ansible_user }}"
+    exclusive: yes
+    state: present
+  tags:
+    - ssh
+
+- name: Remove tmp authorized_keys file
+  file:
+    path: "{{ ssh_tmp.path }}"
+    state: absent
+  tags:
+    - ssh

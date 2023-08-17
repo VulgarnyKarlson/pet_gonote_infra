@@ -1,0 +1,82 @@
+- name: Creates volume directory for container
+  file:
+    path: "{{ item.value }}"
+    state: directory
+    recurse: yes
+  with_dict: "{{ dockerstorage }}"
+  when: dockerstorage is defined
+  tags:
+    - docker
+
+- name: Create directories for docker configs
+  file:
+    path: "{{ storage_dir }}"
+    state: directory
+    mode: '0777'
+    recurse: yes
+  tags:
+    - docker
+
+- name: Fill volume directory for storage
+  copy:
+    src: "{{ role_path }}/files/{{ item.key }}/"
+    dest: "{{ item.value }}"
+  with_dict: "{{ dockerstorage }}"
+  when: dockerstorage is defined
+  tags:
+    - docker
+
+- name: Create configuration directory for docker-container
+  file:
+    name: "{{ storage_dir }}/{{ item.key }}"
+    state: directory
+  with_dict: "{{ dockerapps }}"
+  tags:
+    - docker-app
+
+- name: Create network for docker
+  docker_network:
+    "{{ { item.key: item.value } | combine({'state':'present'}) }}"
+  with_dict: "{{ dockernets }}"
+  when: dockernets is defined
+  tags:
+    - docker-app
+
+- name: Create network for docker (customized)
+  docker_network: "{{ customnets }}"
+  when: customnets is defined
+  tags:
+    - docker-app
+
+- name: Log into Docker registry
+  docker_login:
+    "{{ item.value.cred | combine({'config_path':storage_dir + '/' + item.key + '/config.json'}) }}"
+  environment:
+    DOCKER_CONFIG: "{{ storage_dir }}/{{ item.key }}"
+  with_dict: "{{ dockerapps }}"
+  when: item.value.cred is defined and ( (target_app is not defined) or (target_app == item.key ))
+  tags:
+    - docker-app
+
+- name: Run docker container
+  docker_container:
+    "{% if dockernets is defined %}{{ item.value.container | combine({'networks': dockernets }) }}{% else %}{{ item.value.container }}{% endif %}"
+  notify: prune unused docker objects
+  environment:
+    DOCKER_CONFIG: "{{ storage_dir }}/{{ item.key }}"
+  with_dict: "{{ dockerapps }}"
+  when: item.value.container is defined and ( (target_app is not defined) or (target_app == item.key ))
+  loop_control:
+    pause: "{{ deploy_delay|default(0) }}"
+  tags:
+    - docker-app
+
+- name: Logout from Docker registry
+  docker_login:
+    "{{ item.value.cred | combine({'config_path':storage_dir + '/' + item.key + '/config.json', 'state': 'absent'}) }}"
+  environment:
+    DOCKER_CONFIG: "{{ storage_dir }}/{{ item.key }}"
+  with_dict: "{{ dockerapps }}"
+  when: item.value.cred is defined and ( (target_app is not defined) or (target_app == item.key ))
+  tags:
+    - docker-app

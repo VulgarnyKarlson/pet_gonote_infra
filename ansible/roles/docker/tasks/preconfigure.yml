@@ -1,0 +1,9 @@
+- name: Create docker configuration directory
+  file:
+    name: /etc/docker
+    state: directory
+
+- name: Copy Docker daemon config
+  copy:
+    src: "{{ role_path }}/files/daemon.json"
+    dest: /etc/docker/daemon.json

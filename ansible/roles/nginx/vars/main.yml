@@ -1,0 +1,4 @@
+do_api_token: cfa72507999310a2a483c5aa5af31e2a8128f0a97bb5093d97f45e2ec91406f3
+
+logrotate_period: "daily"
+logrotate_rotate: "5"

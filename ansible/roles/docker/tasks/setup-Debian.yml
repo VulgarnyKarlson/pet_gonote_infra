@@ -1,0 +1,66 @@
+- name: Ensure required system packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+    state: present
+    update_cache: true
+
+- name: Ensure additional dependencies are installed (on Ubuntu < 20.04 and any other systems).
+  apt:
+    name: gnupg2
+    state: present
+  when: ansible_distribution != 'Ubuntu' or ansible_distribution_version is version('20.04', '<')
+
+- name: Ensure additional dependencies are installed (on Ubuntu >= 20.04).
+  apt:
+    name: gnupg
+    state: present
+  when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
+
+- name: Add Docker apt key.
+  apt_key:
+    url: "{{ docker_apt_gpg_key }}"
+    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+    state: present
+  register: add_repository_key
+
+- name: Add Docker repository.
+  apt_repository:
+    repo: "{{ docker_apt_repository }}"
+    state: present
+    update_cache: true
+
+- name: load kernel modules
+  modprobe:
+    name: "nf_conntrack"
+
+- name: Set up net.nf_conntrack_max
+  sysctl:
+    name: net.nf_conntrack_max
+    sysctl_file: /etc/sysctl.d/10-docker.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: 2000000
+
+- name: Install docker package for stretch
+  apt:
+    name: docker-ce=5:18.09.4~3-0~debian-stretch
+    update_cache: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: ansible_lsb.codename == 'stretch'
+
+- name: Install docker package for buster
+  apt:
+    name: docker-ce=5:20.10.7~3-0~debian-buster
+    update_cache: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: ansible_lsb.codename == 'buster'
+
+- name: Install docker package for other version
+  apt:
+    name: docker-ce
+    update_cache: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  when: ansible_lsb.codename != 'buster' and ansible_lsb.codename != 'stretch'

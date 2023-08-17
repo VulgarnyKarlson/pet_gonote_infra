@@ -1,0 +1,65 @@
+- name: Install nginx
+  import_tasks: install.yml
+  tags: rolenginxsites
+  when: not ansible_check_mode
+
+- name: Generate dhparams
+  shell: openssl dhparam -out /etc/nginx/dhparam.pem 2048
+  args:
+    creates: /etc/nginx/dhparam.pem
+  tags: rolenginxsites
+
+- name: Create configuration directories
+  file:
+    path: "/etc/nginx/{{ item.path }}"
+    state: directory
+    recurse: yes
+  when: item.state == "directory"
+  with_items: "{{ lookup('filetree',role_path + '/files/nginx/',wantlist=true) }}"
+  tags: rolenginxsites
+
+- name: Copy regular files
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/nginx/{{ item.path }}"
+  when: item.state == "file" and not item.path is regex('.*\.j2')
+  with_items: "{{ lookup('filetree', role_path + '/files/nginx/',wantlist=true) }}"
+  tags: rolenginxsites
+
+- name: Copy template files
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/nginx/{{ item.path | regex_replace('.j2$','') }}"
+  when: item.state == "file" and item.path is regex('.*\.j2')
+  with_items: "{{ lookup('filetree', role_path + '/files/nginx/',wantlist=true) }}"
+  tags: rolenginxsites
+
+- name: Generate server configs from template
+  template:
+    src: "{{ service.template | default('files/99-service.conf.j2') }}"
+    dest: "/etc/nginx/conf.d/99-{{ domains[0] }}.conf"
+  when: services is defined
+  notify: reload nginx
+  tags: conf
+
+- name: 'Set HTTP Basic Auth Credentials'
+  htpasswd:
+    path: "{{ item.0.file }}"
+    name: "{{ item.1.user }}"
+    password: "{{ item.1.password }}"
+  with_subelements:
+    - "{{ nginx_creds }}"
+    - users
+  when: nginx_creds is defined
+  tags:
+    - rolenginxsites-htpasswd
+    - rolenginxsites
+  notify: reload nginx
+
+- name: Install logrotate
+  import_tasks: logrotate.yml
+  tags: rolenginxsites
+  when: not ansible_check_mode
+
+- name: Flush handlers
+  meta: flush_handlers

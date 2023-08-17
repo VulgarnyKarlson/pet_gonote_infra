@@ -1,0 +1,91 @@
+- name: Set up net.core.somaxconn
+  sysctl:
+    name: net.core.somaxconn
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "131072"
+  ignore_errors: True
+- name: Set up net.ipv4.tcp_max_syn_backlog
+  sysctl:
+    name: net.ipv4.tcp_max_syn_backlog
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "16384"
+  ignore_errors: True
+- name: Set up net.core.netdev_max_backlog
+  sysctl:
+    name: net.core.netdev_max_backlog
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "32755"
+  ignore_errors: True
+- name: Set up net.ipv4.ip_local_port_range
+  sysctl:
+    name: net.ipv4.ip_local_port_range
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "10240 65535"
+  ignore_errors: True
+- name: Set up net.ipv4.tcp_tw_reuse
+  sysctl:
+    name: net.ipv4.tcp_tw_reuse
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "1"
+  ignore_errors: True
+- name: Set up net.ipv4.tcp_max_orphans
+  sysctl:
+    name: net.ipv4.tcp_max_orphans
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "1000000"
+  ignore_errors: True
+- name: Set up net.nf_conntrack_max
+  sysctl:
+    name: net.nf_conntrack_max
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "5000000"
+  ignore_errors: True
+- name: Set up net.ipv4.tcp_fin_timeout
+  sysctl:
+    name: net.ipv4.tcp_fin_timeout
+    sysctl_file: /etc/sysctl.d/10-nginx.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "5"
+  ignore_errors: True
+- name: Set up vm.max_map_count
+  sysctl:
+    name: vm.max_map_count
+    sysctl_file: /etc/sysctl.d/10-elasticsearch.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "262144"
+  ignore_errors: True
+- name: Set up kernel.panic
+  sysctl:
+    name: kernel.panic
+    sysctl_file: /etc/sysctl.d/05-panic.conf
+    sysctl_set: yes
+    state: present
+    reload: yes
+    value: "5"
+  ignore_errors: True
+  tags: panic
