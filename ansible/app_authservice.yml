@@ -1,6 +1,6 @@
 - hosts: "{{ run_hosts|default('dev') }}"
   serial: "{{ serial|default(1) }}"
-  no_log: false
+  no_log: true
   vars:
     dockerapps:
       auth_service:
