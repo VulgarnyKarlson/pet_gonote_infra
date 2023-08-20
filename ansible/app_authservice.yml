@@ -1,0 +1,24 @@
+- hosts: "{{ run_hosts|default('dev') }}"
+  serial: "{{ serial|default(1) }}"
+  no_log: false
+  vars:
+    dockerapps:
+      auth_service:
+        cred:
+          username: "{{ cred_user if cred_user is defined else lookup('env', 'CI_REGISTRY_USER', 'GITLAB_USER') | replace(',','') }}"
+          password: "{{ cred_password if cred_password is defined else lookup('env', 'CI_JOB_TOKEN', 'GITLAB_TOKEN') | replace(',','') }}"
+          registry: "registry.karlson.dev"
+        container:
+          name: "auth_service"
+          image: "registry.karlson.dev/individual/pet_gonote/authservice:{{ tag_git }}"
+          hostname: "{{ ansible_hostname }}"
+          restart_policy: "always"
+          network_mode: "bridge"
+          stop_timeout: 120
+          published_ports:
+            - "0.0.0.0:{{ app_auth_service_env.HTTP_PORT }}:3000"
+            - "0.0.0.0:{{ app_auth_service_env.GRPC_PORT }}:5000"
+          env: "{{ app_auth_service_env_full }}"
+  roles:
+    - gonote
+    - docker-app

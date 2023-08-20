@@ -1,0 +1,16 @@
+---
+
+- include_tasks: pre-config.yml
+  tags:
+    - pre-config
+    - postgres
+
+- include_tasks: install.yml
+  tags:
+    - install
+    - postgres
+
+- include_tasks: post-install.yml
+  tags:
+    - post-install
+    - postgres

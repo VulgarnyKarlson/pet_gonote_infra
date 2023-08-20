@@ -37,3 +37,4 @@
   command: service docker restart
   tags:
     - docker
+    - install

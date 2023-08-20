@@ -1,0 +1,16 @@
+- name: Create data directory
+  file:
+    path: /storage/postgres/initdb
+    state: directory
+    recurse: yes
+  tags:
+    - pre-config
+    - postgres
+
+- name: Create init-file for sql
+  template:
+    src: initdb.sql.j2
+    dest: /storage/postgres/initdb/init.sql
+  tags:
+    - pre-config
+    - postgres

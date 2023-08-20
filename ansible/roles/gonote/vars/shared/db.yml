@@ -1,0 +1,6 @@
+db_env:
+  DB_HOST: "127.0.0.1"
+  DB_PORT: "3306"
+  DB_USERNAME: "csgocase"
+  DB_DATABASE: "csgocase"
+  DB_SYNCHRONIZE: "true"

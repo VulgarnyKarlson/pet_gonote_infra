@@ -1,0 +1,19 @@
+- name: Include shared variables
+  include_vars:
+    dir: "vars/shared"
+    extensions: [yml]
+  tags: always
+
+- name: Include application variables
+  include_vars:
+    dir: "vars/application"
+    extensions: [yml]
+  tags: always
+
+- name: include secrets variables
+  include_vars: "vars/secrets.yml"
+  tags: always
+
+- name: combine variables
+  include_vars: "vars/combine.yml"
+  tags: always

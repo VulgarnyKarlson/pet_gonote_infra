@@ -1,0 +1,9 @@
+---
+
+- name: Clean init directory
+  file:
+    state: absent
+    path: "/storage/postgres/initdb"
+  tags:
+    - post-install
+    - postgres

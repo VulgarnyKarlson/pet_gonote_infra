@@ -1,0 +1,5 @@
+app_auth_service_env_full: "{{
+  app_auth_service_env
+  | combine(app_auth_service_secrets_env)
+  | combine(db_secrets_env)
+}}"

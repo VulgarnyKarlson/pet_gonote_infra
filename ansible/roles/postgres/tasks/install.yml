@@ -1,0 +1,32 @@
+---
+# file: postgres/tasks/install.yml
+
+- name: Create network for docker-containers
+  docker_network:
+    name: services
+    state: present
+  tags:
+    - install
+    - postgres
+
+- name: Run postgres server
+  docker_container:
+    name: postgres-server
+    image: postgres:12
+    hostname: postgres-server
+    restart_policy: always
+    env:
+      POSTGRES_USER: "{{ postgres_root_name | default('postgres') }}"
+      POSTGRES_PASSWORD: "{{ postgres_root_password }}"
+    networks:
+      - name: "services"
+    published_ports:
+      - 5432:5432
+    volumes:
+      - /storage/postgres/data:/var/lib/postgresql/data
+      - /storage/postgres/etc:/etc/postgresql
+      - /storage/postgres/initdb:/docker-entrypoint-initdb.d/
+      - /storage/postgres/log:/var/log/postgresql
+  tags:
+    - install
+    - postgres
